@@ -1,15 +1,24 @@
 const express = require("express");
 const path = require("path");
+const bodyParser = require("body-parser");
 const { open } = require("sqlite");
 const sqlite3 = require("sqlite3");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { v4: uuidv4 } = require("uuid");
 
 const app = express();
 app.use(express.json());
 
-const dbPath = path.join(__dirname, "twitterClone.db");
+const dbPath = path.join(__dirname, "quadbTech.db");
 let db = null;
+
+app.use(bodyParser.json());
+app.use(
+  bodyParser.urlencoded({
+    extended: true,
+  })
+);
 
 const initializeDBAndServer = async () => {
   try {
@@ -36,12 +45,12 @@ const authenticateToken = (request, response, next) => {
     response.status(401);
     response.send("Invalid JWT Token");
   } else {
-    jwt.verify(jwtToken, "dgfjsdj", async (error, payload) => {
+    jwt.verify(jwtToken, "teyuewty5254", async (error, payload) => {
       if (error) {
         response.status(401);
         response.send("Invalid JWT Token");
       } else {
-        request.username = payload.username;
+        request.userEmail = payload.userEmail;
         request.userId = payload.userId;
         next();
       }
@@ -49,246 +58,525 @@ const authenticateToken = (request, response, next) => {
   }
 };
 
-const getFollowingPeopleIdsOfUser = async (username) => {
-  const getFollowingPeopleQuery = `SELECT following_user_id FROM follower
-    INNER JOIN user ON user.user_id = follower.follower_user_id
-    WHERE user.username = '${username}';`;
+const hasAllProperties = (properties) => {
+  const { userName, userPassword, userImage, totalOrders } = properties;
+  if (
+    userName !== undefined &&
+    userPassword !== undefined &&
+    userImage !== undefined &&
+    totalOrders !== undefined
+  ) {
+    return true;
+  }
 
-  const followingPeople = await db.all(getFollowingPeopleQuery);
-
-  const IdsArray = followingPeople.map(
-    (eachItem) => eachItem.following_user_id
-  );
-
-  return IdsArray;
+  return false;
 };
 
-// Tweet Access Verification
-
-const tweetAccessVerification = async (request, response, next) => {
-  const { userId } = request;
-  const { tweetId } = request.params;
-  const getTweetQuery = `SELECT * FROM tweet
-       INNER JOIN follower ON tweet.user_id = follower.following_user_id 
-       WHERE tweet_id = ${tweetId} AND follower_user_id = ${userId};`;
-
-  const tweet = await db.get(getTweetQuery);
-
-  if (tweet === undefined) {
-    response.status(401);
-    response.send("Invalid Request");
-  } else {
-    next();
+const hasUserNameAndUserPasswordAndUserImageProperties = (properties) => {
+  const { userName, userPassword, userImage } = properties;
+  if (
+    userName !== undefined &&
+    userPassword !== undefined &&
+    userImage !== undefined
+  ) {
+    return true;
   }
+
+  return false;
 };
 
-// Register API
-
-app.post("/register/", async (request, response) => {
-  const { username, password, name, gender } = request.body;
-  const getUserDetailsQuery = `SELECT * FROM user WHERE username = '${username}';`;
-  const dbUser = await db.get(getUserDetailsQuery);
-
-  if (dbUser === undefined) {
-    if (password.length > 6) {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const postQuery = `INSERT INTO user(name, username, password, gender)
-                                VALUES('${name}', '${username}', '${hashedPassword}', '${gender}');`;
-      await db.run(postQuery);
-      response.send("User created successfully");
-    } else {
-      response.status(400);
-      response.send("Password is too short");
-    }
-  } else {
-    response.status(400);
-    response.send("User already exists");
+const hasUserNameAndUserImageAndTotalOrdersProperties = (properties) => {
+  const { userName, userImage, totalOrders } = properties;
+  if (
+    userName !== undefined &&
+    userImage !== undefined &&
+    totalOrders !== undefined
+  ) {
+    return true;
   }
-});
 
-// Login API
+  return false;
+};
+
+const hasUserNameAndUserPasswordAndTotalOrdersProperties = (properties) => {
+  const { userName, userPassword, totalOrders } = properties;
+  if (
+    userName !== undefined &&
+    userPassword !== undefined &&
+    totalOrders !== undefined
+  ) {
+    return true;
+  }
+
+  return false;
+};
+
+const hasUserPasswordAndUserImageAndTotalOrdersProperties = (properties) => {
+  const { userPassword, userImage, totalOrders } = properties;
+  if (
+    userPassword !== undefined &&
+    userImage !== undefined &&
+    totalOrders !== undefined
+  ) {
+    return true;
+  }
+
+  return false;
+};
+
+const hasUserNameAndUserPasswordProperties = (properties) => {
+  const { userName, userPassword } = properties;
+  if (userName !== undefined && userPassword !== undefined) {
+    return true;
+  }
+
+  return false;
+};
+
+const hasUserNameAndUserImageProperties = (properties) => {
+  const { userName, userImage } = properties;
+  if (userName !== undefined && userImage !== undefined) {
+    return true;
+  }
+
+  return false;
+};
+
+const hasUserNameAndTotalOrdersProperties = (properties) => {
+  const { userName, totalOrders } = properties;
+  if (userName !== undefined && totalOrders !== undefined) {
+    return true;
+  }
+
+  return false;
+};
+
+const hasUserPasswordAndUserImageProperties = (properties) => {
+  const { userPassword, userImage } = properties;
+  if (userPassword !== undefined && userImage !== undefined) {
+    return true;
+  }
+
+  return false;
+};
+
+const hasUserPasswordAndTotalOrdersProperties = (properties) => {
+  const { userPassword, totalOrders } = properties;
+  if (userPassword !== undefined && totalOrders !== undefined) {
+    return true;
+  }
+
+  return false;
+};
+
+const hasUserImageAndTotalOrdersProperties = (properties) => {
+  const { userImage, totalOrders } = properties;
+  if (userImage !== undefined && totalOrders !== undefined) {
+    return true;
+  }
+
+  return false;
+};
+
+// Login User API
 
 app.post("/login/", async (request, response) => {
-  const { username, password } = request.body;
-  const getUserDetailsQuery = `SELECT * FROM user WHERE username LIKE '%${username}%';`;
-  const dbUser = await db.get(getUserDetailsQuery);
+  const { userEmail, userPassword } = request.body;
+  const selectUserQuery = `SELECT * FROM users_table WHERE user_email = '${userEmail}'`;
+  const dbUser = await db.get(selectUserQuery);
+  if (dbUser === undefined) {
+    response.status(400);
+    response.send("Invalid User");
+  } else {
+    const isPasswordMatched = await bcrypt.compare(
+      userPassword,
+      dbUser.user_password
+    );
+    if (isPasswordMatched === true) {
+      const payload = {
+        userEmail: userEmail,
+        userId: dbUser.user_id,
+      };
 
-  if (dbUser !== undefined) {
-    isPasswordMatched = await bcrypt.compare(password, dbUser.password);
-    if (isPasswordMatched) {
-      const userId = dbUser.user_id;
-      const payLoad = { username: username, userId: userId };
-      const jwtToken = jwt.sign(payLoad, "dgfjsdj");
+      const dateTime = new Date().toJSON().substring(0, 19).replace("T", " ");
+
+      const lastLoginQuery = `UPDATE users_table
+                              SET last_logged_in = '${dateTime}'
+                              WHERE user_email = '${userEmail}';`;
+
+      await db.run(lastLoginQuery);
+
+      const jwtToken = jwt.sign(payload, "teyuewty5254");
       response.send({ jwtToken });
     } else {
       response.status(400);
-      response.send("Invalid password");
+      response.send("Invalid Password");
     }
+  }
+});
+
+// Get User Details
+
+app.get("/", async (request, response, next) => {
+  response.send(`
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <div class="container">
+        <h1 class="text-center mt-3 mb-3">QuadB Tech Form</h1>
+        <div class="card">
+            <div class="card-header">User Details Form</div>
+                <div class="card-body">
+                    <form method="POST" action="/insert">
+                        <div class="mb-3">
+                            <label>User Name</label>
+                            <input type="text" name="userName" id="user_name" placeholder="Enter User Name" class="form-control" />
+                        </div>
+                        <div class="mb-3">
+                            <label>User Email</label>
+                            <input type="email" name="userEmail" id="user_email" placeholder="Enter Email Address" class="form-control" />
+                        </div>
+                         <div class="mb-3">
+                            <label>User Password</label>
+                            <input type="password" name="userPassword" id="user_password" placeholder="Enter Password" class="form-control" />
+                        </div>
+                         <div class="mb-3">
+                            <label>User Image</label>
+                            <input type="text" name="userImage" id="user_image" placeholder="Enter Image Url" class="form-control" />
+                        </div>
+                         <div class="mb-3">
+                            <label>Total Orders</label>
+                            <input type="text" name="totalOrders" id="total_orders" placeholder="Enter Total Orders" class="form-control" />
+                        </div>
+                        <div class="mb-3">
+                            <button type="submit" id="submit_button" class="btn btn-primary">Submit</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    `);
+});
+
+// Get Specific User Details
+
+app.get("/details/:userId/", authenticateToken, async (request, response) => {
+  const { userId } = request.params;
+
+  const getUserDetailsQuery = `SELECT * FROM users_table WHERE user_id = '${userId}';`;
+
+  const userDetails = await db.get(getUserDetailsQuery);
+
+  if (userDetails === undefined) {
+    response.status(401);
+
+    response.send("Invalid User Id");
   } else {
-    response.status(400);
-    response.send("Invalid user");
+    response.status(200);
+
+    response.send(userDetails);
   }
 });
 
-// Get Latest Tweets API
+// Update User Details
 
-app.get("/user/tweets/feed/", authenticateToken, async (request, response) => {
-  const { username } = request;
+app.put("/update/:userId/", authenticateToken, async (request, response) => {
+  const { userId } = request.params;
+  const { userName, userPassword, userImage, totalOrders } = request.body;
+  let updateQuery = "";
+  let responseMsg = null;
 
-  const followingUserIds = await getFollowingPeopleIdsOfUser(username);
+  const getTheUserDetailsQuery = `SELECT * FROM users_table WHERE user_id = '${userId}';`;
 
-  const getTweetsQuery = `SELECT username, tweet, date_time AS dateTime
+  const userDetails = await db.get(getTheUserDetailsQuery);
 
-  FROM user INNER JOIN tweet ON user.user_id = tweet.user_id WHERE user.user_id IN (${followingUserIds}) ORDER BY date_time DESC LIMIT 4;`;
-  const userTweets = await db.all(getTweetsQuery);
-  response.send(userTweets);
-});
+  if (userDetails === undefined) {
+    response.status(401);
 
-// Get Following People Names API
+    response.send("Invalid User Id");
+  } else {
+    switch (true) {
+      case hasAllProperties(request.body):
+        updateQuery = `
+             UPDATE users_table
+             SET user_name = '${userName}',
+                 user_password = '${userPassword}',
+                 user_image = '${userImage}',
+                 total_orders = '${totalOrders}'
+             WHERE
+              user_id = '${userId}';`;
 
-app.get("/user/following/", authenticateToken, async (request, response) => {
-  const { username, userId } = request;
+        responseMsg = "Users Details Successfully Updated";
+        await db.run(updateQuery);
+        response.send(responseMsg);
+        break;
+      case hasUserNameAndUserPasswordAndUserImageProperties(request.body):
+        updateQuery = `
+             UPDATE users_table
+             SET user_name = '${userName}',
+                 user_password = '${userPassword}',
+                 user_image = '${userImage}'
+             WHERE
+              user_id = '${userId}';`;
+        responseMsg = "Users Details Successfully Updated";
+        await db.run(updateQuery);
+        response.send(responseMsg);
+        break;
+      case hasUserNameAndUserImageAndTotalOrdersProperties(request.body):
+        updateQuery = `
+             UPDATE users_table
+             SET user_name = '${userName}',
+                 user_image = '${userImage}'
+                 total_orders = '${totalOrders}'
+             WHERE
+              user_id = '${userId}';`;
+        responseMsg = "Users Details Successfully Updated";
+        await db.run(updateQuery);
+        response.send(responseMsg);
+        break;
+      case hasUserNameAndUserPasswordAndTotalOrdersProperties(request.body):
+        updateQuery = `
+             UPDATE users_table
+             SET user_name = '${userName}',
+                 user_password = '${userPassword}',
+                 total_orders = '${totalOrders}'
+             WHERE
+              user_id = '${userId}';`;
+        responseMsg = "Users Details Successfully Updated";
+        await db.run(updateQuery);
+        response.send(responseMsg);
+        break;
+      case hasUserPasswordAndUserImageAndTotalOrdersProperties(request.body):
+        updateQuery = `
+             UPDATE users_table
+             SET user_password = '${userPassword}',
+                 user_image = '${userImage}',
+                 total_orders = '${totalOrders}'
+             WHERE
+              user_id = '${userId}';`;
+        responseMsg = "Users Details Successfully Updated";
+        await db.run(updateQuery);
+        response.send(responseMsg);
+        break;
+      case hasUserNameAndUserPasswordProperties(request.body):
+        updateQuery = `
+             UPDATE users_table
+             SET user_name = '${userName}'
+                 user_password = '${userPassword}',
+             WHERE
+              user_id = '${userId}';`;
+        responseMsg = "Users Details Successfully Updated";
+        await db.run(updateQuery);
+        response.send(responseMsg);
+        break;
+      case hasUserNameAndUserImageProperties(request.body):
+        updateQuery = `
+             UPDATE users_table
+             SET user_name = '${userName}',
+                 user_image = '${userImage}',
+             WHERE
+              user_id = '${userId}';`;
 
-  const getFollowingPeopleNamesQuery = `SELECT name FROM follower INNER JOIN user ON user.user_id = follower.following_user_id WHERE follower_user_id = ${userId};`;
+        responseMsg = "Users Details Successfully Updated";
+        await db.run(updateQuery);
+        response.send(responseMsg);
+        break;
+      case hasUserNameAndTotalOrdersProperties(request.body):
+        updateQuery = `
+             UPDATE users_table
+             SET user_name = '${userName}',
+                 total_orders = '${totalOrders}'
+             WHERE
+              user_id = '${userId}';`;
 
-  const followingPeopleNames = await db.all(getFollowingPeopleNamesQuery);
+        responseMsg = "Users Details Successfully Updated";
+        await db.run(updateQuery);
+        response.send(responseMsg);
+        break;
+      case hasUserPasswordAndUserImageProperties(request.body):
+        updateQuery = `
+             UPDATE users_table
+             SET user_password = '${userPassword}',
+                 user_image = '${userImage}'
+             WHERE
+              user_id = '${userId}';`;
 
-  response.send(followingPeopleNames);
-});
+        responseMsg = "Users Details Successfully Updated";
+        await db.run(updateQuery);
+        response.send(responseMsg);
+        break;
+      case hasUserPasswordAndTotalOrdersProperties(request.body):
+        updateQuery = `
+             UPDATE users_table
+             SET user_password = '${userPassword}',
+                 total_orders = '${totalOrders}'
+             WHERE
+              user_id = '${userId}';`;
 
-// Get follower People Names API
+        responseMsg = "Users Details Successfully Updated";
+        await db.run(updateQuery);
+        response.send(responseMsg);
+        break;
+      case hasUserImageAndTotalOrdersProperties(request.body):
+        updateQuery = `
+             UPDATE users_table
+             SET user_image = '${userImage}',
+                 total_orders = '${totalOrders}'
+             WHERE
+              user_id = '${userId}';`;
 
-app.get("/user/followers/", authenticateToken, async (request, response) => {
-  const { username, userId } = request;
+        responseMsg = "Users Details Successfully Updated";
+        await db.run(updateQuery);
+        response.send(responseMsg);
+        break;
+      case userName !== undefined:
+        updateQuery = `
+             UPDATE users_table
+             SET user_name = '${userName}'
+             WHERE
+              user_id = '${userId}';`;
 
-  const getFollowersQuery = `SELECT DISTINCT name FROM follower
-    INNER JOIN user ON user.user_id = follower.follower_user_id WHERE following_user_id = ${userId};`;
+        responseMsg = "Users Details Successfully Updated";
+        await db.run(updateQuery);
+        response.send(responseMsg);
+        break;
+      case userPassword !== undefined:
+        updateQuery = `
+             UPDATE users_table
+             SET user_password = '${userPassword}'
+             WHERE
+              user_id = '${userId}';`;
 
-  const followers = await db.all(getFollowersQuery);
+        responseMsg = "Users Details Successfully Updated";
+        await db.run(updateQuery);
+        response.send(responseMsg);
+        break;
+      case userImage !== undefined:
+        updateQuery = `
+             UPDATE users_table
+             SET user_image = '${userImage}'
+             WHERE
+              user_id = '${userId}';`;
 
-  response.send(followers);
-});
+        responseMsg = "Users Details Successfully Updated";
+        await db.run(updateQuery);
+        response.send(responseMsg);
+        break;
+      case totalOrders !== undefined:
+        updateQuery = `
+             UPDATE users_table
+             SET total_orders = '${totalOrders}'
+             WHERE
+              user_id = '${userId}';`;
 
-// Get Tweets By TweetId API
-
-app.get(
-  "/tweets/:tweetId/",
-  authenticateToken,
-  tweetAccessVerification,
-  async (request, response) => {
-    const { tweetId } = request.params;
-
-    const { username, userId } = request;
-
-    const getTweetQuery = `SELECT tweet,
-        (SELECT COUNT() FROM like WHERE like.tweet_id = ${tweetId}) AS likes,
-        (SELECT COUNT() FROM reply WHERE reply.tweet_id = ${tweetId}) AS replies,
-        date_time AS dateTime FROM tweet WHERE tweet_id = ${tweetId};`;
-
-    const tweet = await db.get(getTweetQuery);
-
-    response.send(tweet);
+        responseMsg = "Users Details Successfully Updated";
+        await db.run(updateQuery);
+        response.send(responseMsg);
+        break;
+      default:
+        response.status(400);
+        response.send("Invalid User Details");
+        break;
+    }
   }
-);
-
-// Get UserNames Liked Tweet API
-
-app.get(
-  "/tweets/:tweetId/likes/",
-  authenticateToken,
-  tweetAccessVerification,
-  async (request, response) => {
-    const { tweetId } = request.params;
-
-    const { username, userId } = request;
-
-    const getUserNamesWhoLikedQuery = `SELECT username FROM user
-      INNER JOIN like ON user.user_id = like.user_id WHERE tweet_id = ${tweetId};`;
-
-    const likedUsers = await db.all(getUserNamesWhoLikedQuery);
-
-    const userNamesArray = likedUsers.map((eachItem) => eachItem.username);
-
-    response.send({ likes: userNamesArray });
-  }
-);
-
-// Get Replies API
-
-app.get(
-  "/tweets/:tweetId/replies/",
-  authenticateToken,
-  tweetAccessVerification,
-  async (request, response) => {
-    const { tweetId } = request.params;
-
-    const { username, userId } = request;
-
-    const getRepliesQuery = `SELECT name, reply FROM user
-       INNER JOIN reply ON user.user_id = reply.user_id WHERE tweet_id = ${tweetId};`;
-
-    const replies = await db.all(getRepliesQuery);
-
-    response.send({ replies: replies });
-  }
-);
-
-// Get All Tweets Of User API
-
-app.get("/user/tweets/", authenticateToken, async (request, response) => {
-  const { username, userId } = request;
-
-  const getTweetsQuery = `SELECT tweet,
-       COUNT(DISTINCT like_id) AS likes,
-       COUNT(DISTINCT reply_id) AS replies,
-       date_time AS dateTime FROM tweet LEFT JOIN reply ON tweet.tweet_id = reply.tweet_id LEFT JOIN like ON tweet.tweet_id = like.tweet_id 
-       WHERE tweet.user_id = ${userId}
-       GROUP BY tweet.tweet_id`;
-
-  const tweets = await db.all(getTweetsQuery);
-
-  response.send(tweets);
 });
 
-// Post Tweet API
+// Get User's Image
 
-app.post("/user/tweets/", authenticateToken, async (request, response) => {
-  const { tweet } = request.body;
-  const userId = parseInt(request.userId);
+app.get("/image/:userId", authenticateToken, async (request, response) => {
+  const { userId } = request.params;
+
+  const getTheUserDetailsQuery = `SELECT * FROM users_table WHERE user_id = '${userId}';`;
+
+  const userDetails = await db.get(getTheUserDetailsQuery);
+
+  if (userDetails === undefined) {
+    response.status(401);
+
+    response.send("Invalid User Id");
+  } else {
+    const getUserImageQuery = `SELECT user_image
+                                        FROM
+                                            users_table
+                                        WHERE
+                                            user_id = '${userId}';`;
+    const userImage = await db.get(getUserImageQuery);
+    response.status(200);
+
+    response.send(userImage);
+  }
+});
+
+// Create a User Details
+
+app.post("/insert/", async (request, response) => {
+  const {
+    userName,
+    userEmail,
+    userPassword,
+    userImage,
+    totalOrders,
+  } = request.body;
+
+  const hashedPassword = await bcrypt.hash(userPassword, 10);
+
   const dateTime = new Date().toJSON().substring(0, 19).replace("T", " ");
 
-  const createTweetQuery = `INSERT INTO tweet(tweet, user_id, date_time)
-        VALUES('${tweet}', ${userId}, '${dateTime}');`;
+  const getTheUserDetailsQuery = `SELECT * FROM users_table WHERE user_email = '${userEmail}';`;
 
-  await db.run(createTweetQuery);
+  const userDetails = await db.get(getTheUserDetailsQuery);
 
-  response.send("Created a Tweet");
+  if (userDetails === undefined) {
+    const createUserQuery = `INSERT INTO users_table(user_id,
+                                    user_name,
+                                    user_email,
+                                    user_password,
+                                    user_image,
+                                    total_orders,
+                                    created_at
+                                )
+                                VALUES('${uuidv4()}','${userName}',
+                                '${userEmail}',
+                                '${hashedPassword}',
+                                '${userImage}',
+                                '${totalOrders}', '${dateTime}');`;
+
+    await db.run(createUserQuery);
+
+    const getAllUsersQuery = `SELECT * FROM users_table`;
+
+    const allUsersList = await db.all(getAllUsersQuery);
+
+    response.send(allUsersList);
+  } else {
+    response.status(400);
+
+    response.send("User Already Exits");
+  }
 });
 
-// Delete Tweet API
+// Delete a Specific User Details
 
-app.delete(
-  "/tweets/:tweetId/",
-  authenticateToken,
-  async (request, response) => {
-    const { tweetId } = request.params;
+app.delete("/delete/:userId/", authenticateToken, async (request, response) => {
+  const { userId } = request.params;
 
-    const { userId } = request;
+  const getTheUserDetailsQuery = `SELECT * FROM users_table WHERE user_id = '${userId}';`;
 
-    const getTheTweetQuery = `SELECT * FROM tweet WHERE tweet_id = ${tweetId} AND user_id = ${userId};`;
+  const userDetails = await db.get(getTheUserDetailsQuery);
 
-    const tweet = await db.get(getTheTweetQuery);
+  if (userDetails === undefined) {
+    response.status(401);
 
-    if (tweet === undefined) {
-      response.status(401);
-      response.send("Invalid Request");
-    } else {
-      const deleteTweetQuery = `DELETE FROM tweet WHERE tweet_id = ${tweetId};`;
+    response.send("Invalid User Id");
+  } else {
+    const deleteQuery = `DELETE FROM users_table WHERE user_id = '${userId}';`;
 
-      await db.run(deleteTweetQuery);
+    await db.run(deleteQuery);
 
-      response.send("Tweet Removed");
-    }
+    response.status(200);
+
+    response.send("User Details Successfully Deleted");
   }
-);
+});
+
 module.exports = app;

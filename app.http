@@ -1,83 +1,39 @@
 // API 1
+GET http://localhost:3000/details/e83d9ff6-9035-4318-9954-276c56599b4a/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwidXNlcklkIjoyLCJpYXQiOjE2ODkzNTI5MDZ9.OSowQnEPvHyzbb_TdaXHjv25ZOIpd3-ecW34rGQne3A
 
-POST http://localhost:3000/register/
-Content-Type: application/json
-
-{
-  "username": "adam_richard",
-  "password": "richa",
-  "name": "Adam Richard",
-  "gender": "male"
-}
 ###
 
 // API 2
-
-POST http://localhost:3000/login/
+PUT http://localhost:3000/update/e83d9ff6-9035-4318-9954-276c56599b4a/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwidXNlcklkIjoyLCJpYXQiOjE2ODkzNTI5MDZ9.OSowQnEPvHyzbb_TdaXHjv25ZOIpd3-ecW34rGQne3A
 Content-Type: application/json
 
 {
-  "username":"JoeBiden",
-  "password":"biden@123"
+   "userImage": "https://tse2.mm.bing.net/th?id=OIP.2chE4xaPW_-Un3RmEIcIYwAAAA&pid=Api&P=0&h=180"
 }
-### 
+
+###
 
 // API 3
+POST http://localhost:3000/insert/
+Content-Type: application/json
 
-GET http://localhost:3000/user/tweets/feed/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwidXNlcklkIjoyLCJpYXQiOjE2ODkzNTI5MDZ9.OSowQnEPvHyzbb_TdaXHjv25ZOIpd3-ecW34rGQne3A
+{
+   "userName": "adam_richard",
+    "userEmail": "adamrichard1985@gmail.com",
+    "userPassword": "richa123",
+    "userImage": "https://tse1.mm.bing.net/th?id=OIP.ZIlIk0TnjJGaTv8XttXjvgHaHa&pid=Api&P=0&h=180",
+    "totalOrders": "6"
+}
+
 ###
 
 // API 4
-
-GET http://localhost:3000/user/following/
+GET http://localhost:3000/image/e83d9ff6-9035-4318-9954-276c56599b4a/
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwidXNlcklkIjoyLCJpYXQiOjE2ODkzNTI5MDZ9.OSowQnEPvHyzbb_TdaXHjv25ZOIpd3-ecW34rGQne3A
+
 ###
 
 // API 5
-
-GET http://localhost:3000/user/followers/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwidXNlcklkIjoyLCJpYXQiOjE2ODkzNTI5MDZ9.OSowQnEPvHyzbb_TdaXHjv25ZOIpd3-ecW34rGQne3A
-###
-
-// API 6
-
-GET http://localhost:3000/tweets/1/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwidXNlcklkIjoyLCJpYXQiOjE2ODkzNTI5MDZ9.OSowQnEPvHyzbb_TdaXHjv25ZOIpd3-ecW34rGQne3A
-###
-
-// API 7
-
-GET http://localhost:3000/tweets/1/likes/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwidXNlcklkIjoyLCJpYXQiOjE2ODkzNTI5MDZ9.OSowQnEPvHyzbb_TdaXHjv25ZOIpd3-ecW34rGQne3A
-###
-
-// API 8
-
-GET http://localhost:3000/tweets/1/replies/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwidXNlcklkIjoyLCJpYXQiOjE2ODkzNTI5MDZ9.OSowQnEPvHyzbb_TdaXHjv25ZOIpd3-ecW34rGQne3A
-###
-
-// API 9
-
-GET http://localhost:3000/user/tweets/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwidXNlcklkIjoyLCJpYXQiOjE2ODkzNTI5MDZ9.OSowQnEPvHyzbb_TdaXHjv25ZOIpd3-ecW34rGQne3A
-###
-
-// API 10
-
-POST http://localhost:3000/user/tweets/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwidXNlcklkIjoyLCJpYXQiOjE2ODkzNTI5MDZ9.OSowQnEPvHyzbb_TdaXHjv25ZOIpd3-ecW34rGQne3A
-Content-Type: application/json
-
-{
-   "tweet": "The Mornings..."
-}
-###
-
-// API 11
-
-DELETE http://localhost:3000/tweets/3/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwidXNlcklkIjoyLCJpYXQiOjE2ODkzNTI5MDZ9.OSowQnEPvHyzbb_TdaXHjv25ZOIpd3-ecW34rGQne3A
-
-
+DELETE http://localhost:3000/delete/e83d9ff6-9035-4318-9954-276c56599b4a/
